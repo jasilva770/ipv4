@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPv4 - Explicación Interactiva</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --accent: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --warning: #f39c12;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(120deg, var(--primary), var(--dark));
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: var(--dark);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        p {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .ip-structure {
+            background: var(--light);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .ip-display {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 20px 0;
+            color: var(--primary);
+        }
+
+        .octet-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .octet {
+            background: white;
+            border: 3px solid var(--primary);
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 120px;
+            transition: all 0.3s ease;
+        }
+
+        .octet:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-color: var(--secondary);
+        }
+
+        .octet-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .octet-label {
+            color: var(--primary);
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .binary-representation {
+            background: var(--dark);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+        }
+
+        .binary-group {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .classes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .classes-table th {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .classes-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .classes-table tr:hover {
+            background: var(--light);
+        }
+
+        .class-A { background: #ffcccc; }
+        .class-B { background: #ccffcc; }
+        .class-C { background: #ccccff; }
+        .class-D { background: #ffffcc; }
+        .class-E { background: #ffccff; }
+
+        .interactive-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 40px 0;
+        }
+
+        .ip-calculator {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .ip-input {
+            width: 80px;
+            padding: 10px;
+            border: 2px solid var(--primary);
+            border-radius: 5px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .ip-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+        }
+
+        .calculate-btn {
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .calculate-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .result-display {
+            margin-top: 30px;
+            padding: 20px;
+            background: var(--light);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result-item {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .result-value {
+            color: var(--primary);
+        }
+
+        .animation-container {
+            text-align: center;
+            margin: 40px 0;
+            padding: 30px;
+            background: var(--light);
+            border-radius: 15px;
+        }
+
+        .data-packet {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .data-packet:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.5);
+        }
+
+        .network-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin: 40px 0;
+            position: relative;
+        }
+
+        .device {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .device-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .router {
+            color: var(--primary);
+        }
+
+        .computer {
+            color: var(--secondary);
+        }
+
+        .connection {
+            position: absolute;
+            top: 50%;
+            left: 25%;
+            right: 25%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .octet-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .network-diagram {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .connection {
+                position: static;
+                width: 3px;
+                height: 100px;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 IPv4</h1>
+            <p class="subtitle">Protocolo de Internet versión 4 - Explicación Detallada e Interactiva</p>
+        </header>
+
+        <div class="content">
+            <!-- Sección 1: Introducción -->
+            <section class="section">
+                <h2>¿Qué es IPv4?</h2>
+                <p>IPv4 (Internet Protocol version 4) es la cuarta versión del Protocolo de Internet, un protocolo de comunicación fundamental que permite la interconexión de dispositivos en redes.</p>
+                <p>Es el protocolo más utilizado en Internet y utiliza <span class="highlight">direcciones de 32 bits</span> para identificar de manera única cada dispositivo conectado a una red.</p>
+            </section>
+
+            <!-- Sección 2: Estructura de IPv4 -->
+            <section class="section">
+                <h2>Estructura de una Dirección IPv4</h2>
+                <div class="ip-structure">
+                    <div class="ip-display" id="ipExample">192.168.1.1</div>
+                    <p>Una dirección IPv4 está compuesta por <span class="highlight">4 octetos</span> (bytes), cada uno representando un número entre 0 y 255.</p>
+                    
+                    <div class="octet-container">
+                        <div class="octet">
+                            <div class="octet-number">192</div>
+                            <div class="octet-label">Octeto 1</div>
+                        </div>
+                        <div class="octet">
+                            <div class="octet-number">168</div>
+                            <div class="octet-label">Octeto 2</div>
+                        </div>
+                        <div class="octet">
+                            <div class="octet-number">1</div>
+                            <div class="octet-label">Octeto 3</div>
+                        </div>
+                        <div class="octet">
+                            <div class="octet-number">1</div>
+                            <div class="octet-label">Octeto 4</div>
+                        </div>
+                    </div>
+
+                    <div class="binary-representation">
+                        <div class="binary-group">11000000</div>
+                        <div class="binary-group">10101000</div>
+                        <div class="binary-group">00000001</div>
+                        <div class="binary-group">00000001</div>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Representación binaria (32 bits)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección 3: Clases de IPv4 -->
+            <section class="section">
+                <h2>Clases de Direcciones IPv4</h2>
+                <p>Las direcciones IPv4 se clasifican en 5 clases principales según el primer octeto:</p>
+                
+                <table class="classes-table">
+                    <thead>
+                        <tr>
+                            <th>Clase</th>
+                            <th>Rango Primer Octeto</th>
+                            <th>Formato</th>
+                            <th>Uso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="class-A">
+                            <td>A</td>
+                            <td>1 - 126</td>
+                            <td>Red.Host.Host.Host</td>
+                            <td>Redes muy grandes</td>
+                        </tr>
+                        <tr class="class-B">
+                            <td>B</td>
+                            <td>128 - 191</td>
+                            <td>Red.Red.Host.Host</td>
+                            <td>Redes medianas</td>
+                        </tr>
+                        <tr class="class-C">
+                            <td>C</td>
+                            <td>192 - 223</td>
+                            <td>Red.Red.Red.Host</td>
+                            <td>Redes pequeñas</td>
+                        </tr>
+                        <tr class="class-D">
+                            <td>D</td>
+                            <td>224 - 239</td>
+                            <td>Multicast</td>
+                            <td>Transmisiones grupales</td>
+                        </tr>
+                        <tr class="class-E">
+                            <td>E</td>
+                            <td>240 - 255</td>
+                            <td>Reservado</td>
+                            <td>Uso experimental</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Sección 4: Calculadora Interactiva -->
+            <section class="section interactive-section">
+                <h2 style="color: white;">🧮 Calculadora IPv4 Interactiva</h2>
+                <p style="color: white; margin-bottom: 20px;">Ingresa una dirección IP para analizar su estructura:</p>
+                
+                <div class="ip-calculator">
+                    <div class="input-group">
+                        <input type="number" class="ip-input" min="0" max="255" value="192">
+                        <input type="number" class="ip-input" min="0" max="255" value="168">
+                        <input type="number" class="ip-input" min="0" max="255" value="1">
+                        <input type="number" class="ip-input" min="0" max="255" value="1">
+                    </div>
+                    
+                    <button class="calculate-btn" onclick="calculateIP()">Analizar IP</button>
+                    
+                    <div class="result-display" id="resultDisplay">
+                        <div class="result-item">
+                            <span class="result-label">Dirección IP:</span>
+                            <span class="result-value" id="ipResult">192.168.1.1</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Clase:</span>
+                            <span class="result-value" id="classResult">C</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Representación Binaria:</span>
+                            <span class="result-value" id="binaryResult">11000000.10101000.00000001.00000001</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Tipo de Red:</span>
+                            <span class="result-value" id="networkType">Privada (LAN)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección 5: Visualización de Red -->
+            <section class="section">
+                <h2>Visualización del Funcionamiento</h2>
+                <p>Observa cómo los paquetes de datos viajan a través de la red utilizando direcciones IPv4:</p>
+                
+                <div class="animation-container">
+                    <div class="data-packet" onclick="animatePacket()">🚀 Paquete de Datos</div>
+                    <p>¡Haz clic en el paquete para ver la animación!</p>
+                </div>
+
+                <div class="network-diagram">
+                    <div class="device">
+                        <div class="device-icon computer">💻</div>
+                        <div>Computadora</div>
+                        <div style="font-size: 0.9em; color: var(--primary);">192.168.1.10</div>
+                    </div>
+                    
+                    <div class="connection"></div>
+                    
+                    <div class="device">
+                        <div class="device-icon router">📡</div>
+                        <div>Router</div>
+                        <div style="font-size: 0.9em; color: var(--primary);">192.168.1.1</div>
+                    </div>
+                    
+                    <div class="connection"></div>
+                    
+                    <div class="device">
+                        <div class="device-icon computer">📱</div>
+                        <div>Teléfono</div>
+                        <div style="font-size: 0.9em; color: var(--primary);">192.168.1.20</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección 6: Características Importantes -->
+            <section class="section">
+                <h2>características Importantes de IPv4</h2>
+                <ul style="margin-left: 30px; line-height: 2;">
+                    <li><strong>Longitud:</strong> 32 bits (4 bytes)</li>
+                    <li><strong>Número total de direcciones:</strong> 2³² = 4,294,967,296 direcciones</li>
+                    <li><strong>Notación:</strong> Decimal punteada (ej: 192.168.1.1)</li>
+                    <li><strong>Direcciones privadas:</strong> No enrutables en Internet (ej: 192.168.x.x)</li>
+                    <li><strong>Máscara de subred:</strong> Define la porción de red y host</li>
+                    <li><strong>Limitaciones:</strong> Agotamiento de direcciones disponibles</li>
+                </ul>
+            </section>
+        </div>
+
+        <footer>
+            <p>© 2026 - Artefacto Educativo IPv4 | Creado con ❤️ para la educación</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Recuerda: IPv6 es la nueva versión que resuelve el problema de agotamiento de direcciones IPv4</p>
+        </footer>
+    </div>
+
+    <script>
+        // Función para calcular información de IP
+        function calculateIP() {
+            const inputs = document.querySelectorAll('.ip-input');
+            const values = Array.from(inputs).map(input => input.value);
+            
+            const ip = values.join('.');
+            const firstOctet = parseInt(values[0]);
+            
+            // Determinar clase
+            let ipClass = '';
+            let networkType = '';
+            
+            if (firstOctet >= 1 && firstOctet <= 126) {
+                ipClass = 'A';
+                networkType = 'Red grande';
+            } else if (firstOctet >= 128 && firstOctet <= 191) {
+                ipClass = 'B';
+                networkType = 'Red mediana';
+            } else if (firstOctet >= 192 && firstOctet <= 223) {
+                ipClass = 'C';
+                networkType = 'Red pequeña';
+            } else if (firstOctet >= 224 && firstOctet <= 239) {
+                ipClass = 'D';
+                networkType = 'Multicast';
+            } else if (firstOctet >= 240 && firstOctet <= 255) {
+                ipClass = 'E';
+                networkType = 'Reservado';
+            } else {
+                ipClass = 'Inválida';
+                networkType = 'No válida';
+            }
+            
+            // Verificar si es dirección privada
+            if ((firstOctet === 10) || 
+                (firstOctet === 172 && values[1] >= 16 && values[1] <= 31) ||
+                (firstOctet === 192 && values[1] === 168)) {
+                networkType = 'Privada (LAN)';
+            }
+            
+            // Convertir a binario
+            const binary = values.map(val => {
+                return parseInt(val).toString(2).padStart(8, '0');
+            }).join('.');
+            
+            // Mostrar resultados
+            document.getElementById('ipResult').textContent = ip;
+            document.getElementById('classResult').textContent = ipClass;
+            document.getElementById('binaryResult').textContent = binary;
+            document.getElementById('networkType').textContent = networkType;
+            
+            document.getElementById('resultDisplay').style.display = 'block';
+            
+            // Efecto de animación
+            const resultDiv = document.getElementById('resultDisplay');
+            resultDiv.style.animation = 'fadeIn 0.5s ease';
+        }
+
+        // Animación de paquete de datos
+        function animatePacket() {
+            const packet = document.querySelector('.data-packet');
+            packet.style.animation = 'none';
+            
+            setTimeout(() => {
+                packet.style.animation = 'bounce 2s infinite, travel 3s ease-in-out forwards';
+            }, 10);
+            
+            setTimeout(() => {
+                alert('¡El paquete de datos ha viajado a través de la red usando IPv4! 🌐');
+                packet.style.animation = 'bounce 2s infinite';
+            }, 3000);
+        }
+
+        // Agregar estilo de animación de viaje
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes travel {
+                0% { transform: translateY(0) scale(1); }
+                50% { transform: translateY(-50px) scale(1.2); opacity: 0.8; }
+                100% { transform: translateY(0) translateX(200px) scale(1); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Validación de inputs
+        document.querySelectorAll('.ip-input').forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value > 255) this.value = 255;
+                if (this.value < 0) this.value = 0;
+            });
+        });
+
+        // Efecto de carga inicial
+        window.addEventListener('load', function() {
+            document.querySelectorAll('.section').forEach((section, index) => {
+                setTimeout(() => {
+                    section.style.opacity = '1';
+                }, index * 300);
+            });
+        });
+    </script>
+</body>
+</html>
