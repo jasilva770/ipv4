@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculadora de Red — IPv4 & IPv6</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Sora:wght@300;400;500;600&display=swap');
+
+/* ============================================================
+   VARIABLES & RESET
+   ============================================================ */
+:root {
+  --bg-deep:      #080c18;
+  --bg-card:      #0f1522;
+  --bg-card2:     #161e30;
+  --bg-input:     #0b1020;
+  --border:       #1e2d4a;
+  --border-focus: #3a5a8a;
+  --txt-primary:  #dce4ef;
+  --txt-dim:      #6b7f99;
+  --txt-micro:    #3f5068;
+  --accent-net:   #60a5fa; /* azul    – bits de red      */
+  --accent-host:  #fb923c; /* naranja – bits de host     */
+  --accent-bcast: #a78bfa; /* violeta – broadcast        */
+  --accent-ok:    #34d399; /* esmeralda – válido         */
+  --accent-err:   #f43f5e; /* rosa     – error           */
+  --accent-warn:  #f59e0b; /* ámbar    – advertencia     */
+  --accent-ipv6:  #38bdf8; /* sky      – IPv6            */
+  --radius:       10px;
+  --font-mono:    'Share Tech Mono', 'Courier New', monospace;
+  --font-ui:      'Sora', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--txt-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, #0a1f3d22 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, #1a0a2e15 0%, transparent 60%);
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  text-align: center;
+  padding: 38px 16px 24px;
+  position: relative;
+}
+.header::after {
+  content:'';
+  position: absolute; bottom:0; left:8%; right:8%; height:1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.header h1 {
+  font-weight: 300;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--txt-primary);
+  margin-bottom: 6px;
+}
+.header h1 span.v4 { color: var(--accent-net); font-weight: 600; }
+.header h1 span.v6 { color: var(--accent-ipv6); font-weight: 600; }
+.header p {
+  color: var(--txt-dim);
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+}
+
+/* ============================================================
+   MAIN TABS (IPv4 | IPv6 | Subnetting | Referencia)
+   ============================================================ */
+.main-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 16px 0;
+  flex-wrap: wrap;
+}
+.main-tab {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--txt-dim);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.main-tab:hover { border-color: var(--border-focus); color: var(--txt-primary); }
+.main-tab.active {
+  background: linear-gradient(135deg, #1a2a45, #0f1e35);
+  border-color: var(--accent-net);
+  color: var(--accent-net);
+  box-shadow: 0 0 12px #60a5fa22;
+}
+.main-tab[data-tab="ipv6"].active {
+  border-color: var(--accent-ipv6);
+  color: var(--accent-ipv6);
+  box-shadow: 0 0 12px #38bdf822;
+}
+.main-tab[data-tab="subnetting"].active {
+  border-color: var(--accent-bcast);
+  color: var(--accent-bcast);
+  box-shadow: 0 0 12px #a78bfa22;
+}
+.main-tab[data-tab="ref"].active {
+  border-color: var(--accent-warn);
+  color: var(--accent-warn);
+  box-shadow: 0 0 12px #f59e0b22;
+}
+
+/* ============================================================
+   PANEL CONTENEDOR
+   ============================================================ */
+.panel-wrap {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 0 16px 50px;
+}
+.panel { display: none; animation: fadeIn .3s ease; }
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card2);
+}
+.card-header .dot { width: 10px; height: 10px; border-radius: 50%; }
+.card-header h2 {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+}
+.card-body { padding: 18px; }
+
+/* ============================================================
+   INPUT ROW
+   ============================================================ */
+.input-row {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.input-row label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  min-width: 90px;
+}
+.input-row input, .input-row select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--txt-primary);
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  padding: 9px 14px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  flex: 1;
+  min-width: 140px;
+  max-width: 280px;
+}
+.input-row input:focus, .input-row select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px #3a5a8a22;
+}
+.input-row input.err { border-color: var(--accent-err) !important; }
+.input-row input.ok  { border-color: var(--accent-ok); }
+.input-row select option { background: var(--bg-card2); }
+
+.mask-mode-toggle {
+  display: flex; gap: 4px;
+}
+.mask-mode-toggle button {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--txt-dim);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.mask-mode-toggle button.active {
+  background: var(--accent-net);
+  border-color: var(--accent-net);
+  color: #fff;
+}
+
+/* ============================================================
+   ERROR / INFO BAR
+   ============================================================ */
+.info-bar {
+  display: none;
+  font-size: 0.72rem;
+  padding: 7px 12px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+  font-family: var(--font-ui);
+}
+.info-bar.err { display: block; background: #2a0f14; border: 1px solid #f43f5e44; color: var(--accent-err); }
+.info-bar.warn { display: block; background: #1f1a0e; border: 1px solid #f59e0b44; color: var(--accent-warn); }
+.info-bar.ok { display: block; background: #0e1f16; border: 1px solid #34d39944; color: var(--accent-ok); }
+
+/* ============================================================
+   BITS VISUALIZER
+   ============================================================ */
+.bits-wrap {
+  margin: 18px 0 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.bits-row {
+  display: flex; gap: 2px; flex-wrap: nowrap;
+  justify-content: center;
+  min-width: max-content;   /* guarantees the row is never narrower than its content */
+  margin-bottom: 4px;
+}
+/* IPv6 rows: 64 bits wide — do NOT center, let scroll work */
+.bits-row.v6-row {
+  justify-content: flex-start;
+  margin-left: auto;
+  margin-right: auto;
+}
+.bit-octet-group { display: flex; gap: 2px; margin-right: 10px; }
+.bit-octet-group:last-child { margin-right: 0; }
+.bit {
+  width: 22px; height: 22px;
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: background .2s, color .2s;
+}
+.bit.net  { background: #60a5fa28; color: var(--accent-net); border: 1px solid #60a5fa44; }
+.bit.host { background: #fb923c28; color: var(--accent-host); border: 1px solid #fb923c44; }
+.bit.net.one  { background: #60a5fa55; color: #fff; }
+.bit.host.one { background: #fb923c55; color: #fff; }
+
+.bits-labels {
+  display: flex; justify-content: center; gap: 2px; margin-top: 3px;
+}
+.bits-labels .octet-label {
+  width: calc(22px * 8 + 2px * 7);
+  margin-right: 10px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--txt-micro);
+}
+.bits-labels .octet-label:last-child { margin-right: 0; }
+
+.bits-legend {
+  display: flex; gap: 18px; justify-content: center;
+  margin-top: 10px; font-size: 0.72rem; color: var(--txt-dim);
+}
+.bits-legend .leg-item { display: flex; align-items: center; gap: 6px; }
+.bits-legend .leg-swatch { width: 14px; height: 14px; border-radius: 3px; }
+.leg-swatch.net  { background: #60a5fa44; border: 1px solid #60a5fa66; }
+.leg-swatch.host { background: #fb923c44; border: 1px solid #fb923c66; }
+
+/* ============================================================
+   RESULTADOS GRID
+   ============================================================ */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.result-item {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: border-color .2s;
+}
+.result-item:hover { border-color: var(--border-focus); }
+.result-item .r-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--txt-micro);
+  margin-bottom: 5px;
+}
+.result-item .r-val {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: var(--txt-primary);
+  word-break: break-all;
+}
+.result-item.highlight { border-color: var(--accent-net)44; }
+.result-item.highlight .r-val { color: var(--accent-net); }
+.result-item.bcast .r-val { color: var(--accent-bcast); }
+.result-item.hosts .r-val { color: var(--accent-host); }
+
+/* ============================================================
+   SPACE VISUALIZER (barra de espacio de direcciones)
+   ============================================================ */
+.space-bar-wrap { margin: 16px 0; }
+.space-bar {
+  height: 32px;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  border: 1px solid var(--border);
+}
+.space-bar .seg {
+  height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  transition: width .4s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.space-bar .seg.net-seg  { background: linear-gradient(90deg, #60a5fa33, #60a5fa55); color: var(--accent-net); }
+.space-bar .seg.host-seg { background: linear-gradient(90deg, #fb923c22, #fb923c44); color: var(--accent-host); }
+.space-bar .seg.bcast-seg { background: #a78bfa44; color: var(--accent-bcast); width: 28px !important; flex-shrink: 0; }
+.space-bar-labels {
+  display: flex; justify-content: space-between;
+  margin-top: 4px; font-size: 0.68rem; color: var(--txt-micro);
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   SUBNETTING TABLE
+   ============================================================ */
+.subnet-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  overflow-x: auto;
+  display: block;
+}
+.subnet-table th {
+  background: var(--bg-card2);
+  border-bottom: 2px solid var(--border);
+  padding: 9px 10px;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--txt-micro);
+  white-space: nowrap;
+}
+.subnet-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border)88;
+  font-family: var(--font-mono);
+  color: var(--txt-primary);
+  white-space: nowrap;
+}
+.subnet-table tr:nth-child(even) td { background: #0c1220; }
+.subnet-table .idx { color: var(--txt-micro); font-size: 0.75rem; }
+.subnet-table .net-col { color: var(--accent-net); }
+.subnet-table .bcast-col { color: var(--accent-bcast); }
+.subnet-table .hosts-col { color: var(--accent-host); }
+
+/* ============================================================
+   REFERENCIA: CIDR TABLE
+   ============================================================ */
+.ref-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 700px) { .ref-grid { grid-template-columns: 1fr; } }
+
+.cidr-table { width: 100%; border-collapse: collapse; }
+.cidr-table th {
+  background: var(--bg-card2);
+  border-bottom: 2px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--txt-micro);
+}
+.cidr-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border)55;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--txt-primary);
+}
+.cidr-table tr:nth-child(even) td { background: #0c1220; }
+.cidr-table .cidr-n { color: var(--accent-net); font-weight: 700; }
+.cidr-table .cidr-hosts { color: var(--accent-host); }
+.cidr-table .cidr-class { color: var(--accent-warn); }
+
+/* ============================================================
+   TIPS / INFO CARDS
+   ============================================================ */
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.tip-card {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.tip-card h4 {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.tip-card p {
+  font-size: 0.73rem;
+  color: var(--txt-dim);
+  line-height: 1.5;
+}
+.tip-card code {
+  font-family: var(--font-mono);
+  background: #1a2538;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  color: var(--accent-net);
+}
+
+/* ============================================================
+   IPv6 BLOQUES VISUALIZER
+   ============================================================ */
+.v6-blocks {
+  display: flex; gap: 3px; flex-wrap: wrap; justify-content: center;
+  margin: 14px 0 6px;
+}
+.v6-block {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 6px 8px;
+  text-align: center;
+  min-width: 56px;
+}
+.v6-block.prefix { border-color: var(--accent-ipv6)66; background: #0a1a2e; }
+.v6-block.host   { border-color: #fb923c44; background: #1a1008; }
+.v6-block .v6-hex {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--txt-primary);
+}
+.v6-block.prefix .v6-hex { color: var(--accent-ipv6); }
+.v6-block.host .v6-hex   { color: var(--accent-host); }
+.v6-block .v6-idx {
+  font-size: 0.6rem;
+  color: var(--txt-micro);
+  margin-top: 2px;
+}
+.v6-separator {
+  align-self: center;
+  color: var(--txt-micro);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  margin: 0 1px;
+}
+
+/* ============================================================
+   BUTTON
+   ============================================================ */
+.btn {
+  background: linear-gradient(135deg, #1e3a5f, #152a47);
+  border: 1px solid var(--accent-net)55;
+  border-radius: 7px;
+  color: var(--accent-net);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn:hover {
+  background: linear-gradient(135deg, #243f65, #1a3350);
+  box-shadow: 0 0 12px #60a5fa22;
+}
+.btn.purple { border-color: var(--accent-bcast)55; color: var(--accent-bcast); background: linear-gradient(135deg, #1f1530, #15102a); }
+.btn.purple:hover { box-shadow: 0 0 12px #a78bfa22; background: linear-gradient(135deg, #261a38, #1c1530); }
+
+/* ============================================================
+   SECTION LABEL
+   ============================================================ */
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txt-micro);
+  margin: 20px 0 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 580px) {
+  .bit { width: 18px; height: 18px; font-size: 0.6rem; }
+  .bit-octet-group { margin-right: 6px; }
+  .input-row input { max-width: 100%; }
+  .results-grid { grid-template-columns: 1fr 1fr; }
+  .bits-labels .octet-label { width: calc(18px * 8 + 2px * 7); margin-right: 6px; }
+}
+@media (max-width: 420px) {
+  .bit { width: 14px; height: 14px; font-size: 0.52rem; }
+  .bit-octet-group { gap: 1px; margin-right: 4px; }
+  .bits-labels .octet-label { width: calc(14px * 8 + 1px * 7); margin-right: 4px; font-size: 0.55rem; }
+  .v6-block { min-width: 44px; padding: 4px 5px; }
+  .v6-block .v6-hex { font-size: 0.75rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <h1>Calculadora de Red — <span class="v4">IPv4</span> & <span class="v6">IPv6</span></h1>
+  <p>Simulador interactivo de direccionamiento y subnetting</p>
+</div>
+
+<!-- ── MAIN TABS ── -->
+<div class="main-tabs">
+  <button class="main-tab active" data-tab="ipv4">IPv4</button>
+  <button class="main-tab" data-tab="ipv6">IPv6</button>
+  <button class="main-tab" data-tab="subnetting">Subnetting</button>
+  <button class="main-tab" data-tab="ref">Referencia</button>
+</div>
+
+<!-- ============================================================
+     PANEL: IPv4
+     ============================================================ -->
+<div class="panel-wrap">
+
+<div class="panel active" id="panel-ipv4">
+  <div class="card">
+    <div class="card-header">
+      <div class="dot" style="background:var(--accent-net)"></div>
+      <h2>Entrada — Dirección IPv4</h2>
+    </div>
+    <div class="card-body">
+      <div class="input-row">
+        <label>Dirección IP</label>
+        <input type="text" id="ipv4-ip" placeholder="192.168.1.100" autocomplete="off" spellcheck="false"/>
+      </div>
+      <div class="input-row">
+        <label>Máscara</label>
+        <input type="text" id="ipv4-mask" placeholder="/24  ó  255.255.255.0" autocomplete="off" spellcheck="false"/>
+        <div class="mask-mode-toggle">
+          <button class="active" id="btn-cidr" onclick="setMaskMode('cidr')">CIDR</button>
+          <button id="btn-dec" onclick="setMaskMode('dec')">Decimal</button>
+        </div>
+      </div>
+      <div class="info-bar" id="ipv4-info"></div>
+
+      <!-- Bits Visualizer -->
+      <div class="section-label">Visualización binaria — 32 bits</div>
+      <div class="bits-wrap" id="ipv4-bits"></div>
+      <div class="bits-legend">
+        <div class="leg-item"><div class="leg-swatch net"></div> Bits de Red (parte fija)</div>
+        <div class="leg-item"><div class="leg-swatch host"></div> Bits de Host (parte variable)</div>
+      </div>
+
+      <!-- Espacio de direcciones -->
+      <div class="section-label">Espacio de direcciones</div>
+      <div class="space-bar-wrap">
+        <div class="space-bar" id="ipv4-spacebar">
+          <div class="seg net-seg" id="seg-net" style="flex:24">Red</div>
+          <div class="seg host-seg" id="seg-host" style="flex:8">Hosts</div>
+          <div class="seg bcast-seg" id="seg-bcast">BC</div>
+        </div>
+        <div class="space-bar-labels">
+          <span id="label-first">—</span>
+          <span style="color:var(--accent-host)" id="label-hosts">—</span>
+          <span id="label-last">—</span>
+        </div>
+      </div>
+
+      <!-- Resultados -->
+      <div class="section-label">Resultados</div>
+      <div class="results-grid" id="ipv4-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL: IPv6
+     ============================================================ -->
+<div class="panel" id="panel-ipv6">
+  <div class="card">
+    <div class="card-header">
+      <div class="dot" style="background:var(--accent-ipv6)"></div>
+      <h2>Entrada — Dirección IPv6</h2>
+    </div>
+    <div class="card-body">
+      <div class="input-row">
+        <label>Dirección IPv6</label>
+        <input type="text" id="ipv6-addr" placeholder="2001:0db8:85a3::8a2e:0370:7334" autocomplete="off" spellcheck="false"/>
+      </div>
+      <div class="input-row">
+        <label>Prefijo</label>
+        <input type="text" id="ipv6-prefix" placeholder="64" style="max-width:100px;" autocomplete="off"/>
+      </div>
+      <div class="info-bar" id="ipv6-info"></div>
+
+      <!-- Bloques visualizer -->
+      <div class="section-label">Estructura — 8 bloques de 16 bits</div>
+      <div class="v6-blocks" id="ipv6-blocks"></div>
+      <div class="bits-legend" style="margin-top:8px;">
+        <div class="leg-item"><div class="leg-swatch" style="background:#38bdf444;border:1px solid #38bdf466;"></div> Bits de Prefijo (red)</div>
+        <div class="leg-item"><div class="leg-swatch host"></div> Bits de Host (interfaz)</div>
+      </div>
+
+      <!-- Bits IPv6 compacto (solo los bits relevantes del prefijo/host boundary) -->
+      <div class="section-label">Visualización binaria — 128 bits</div>
+      <div class="bits-wrap" id="ipv6-bits"></div>
+
+      <!-- Resultados -->
+      <div class="section-label">Resultados</div>
+      <div class="results-grid" id="ipv6-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL: Subnetting
+     ============================================================ -->
+<div class="panel" id="panel-subnetting">
+  <div class="card">
+    <div class="card-header">
+      <div class="dot" style="background:var(--accent-bcast)"></div>
+      <h2>Divisor de Subnets — IPv4</h2>
+    </div>
+    <div class="card-body">
+      <div class="input-row">
+        <label>Red base</label>
+        <input type="text" id="sub-base" placeholder="192.168.0.0" autocomplete="off" spellcheck="false"/>
+      </div>
+      <div class="input-row">
+        <label>CIDR original</label>
+        <input type="text" id="sub-cidr" placeholder="16" style="max-width:100px;" autocomplete="off"/>
+      </div>
+      <div class="input-row">
+        <label>Nº Subnets</label>
+        <input type="text" id="sub-count" placeholder="4" style="max-width:100px;" autocomplete="off"/>
+      </div>
+      <div class="input-row">
+        <button class="btn purple" onclick="calcSubnetting()">Calcular Subnetting</button>
+      </div>
+      <div class="info-bar" id="sub-info"></div>
+      <div id="sub-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL: Referencia
+     ============================================================ -->
+<div class="panel" id="panel-ref">
+  <div class="card">
+    <div class="card-header">
+      <div class="dot" style="background:var(--accent-warn)"></div>
+      <h2>Referencia Rápida</h2>
+    </div>
+    <div class="card-body">
+      <div class="ref-grid">
+        <!-- Tabla CIDR -->
+        <div>
+          <div class="section-label">Tabla CIDR — /0 a /32</div>
+          <div style="overflow-x:auto;">
+            <table class="cidr-table" id="cidr-table"></table>
+          </div>
+        </div>
+        <!-- Clases + Tips -->
+        <div>
+          <div class="section-label">Clases de red (referencia histórica)</div>
+          <div style="overflow-x:auto; margin-bottom:18px;">
+            <table class="cidr-table" id="class-table"></table>
+          </div>
+          <div class="section-label">Tips & Errores comunes</div>
+          <div class="tips-grid" id="tips-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /panel-wrap -->
+
+<!-- ============================================================
+     JAVASCRIPT ENGINE
+     ============================================================ -->
+<script>
+// ================================================================
+//  TAB SWITCHING
+// ================================================================
+document.querySelectorAll('.main-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ================================================================
+//  UTILIDADES
+// ================================================================
+function toBin32(n) { return (n >>> 0).toString(2).padStart(32, '0'); }
+function toHex32(n) { return (n >>> 0).toString(16).padStart(8, '0'); }
+
+function ip2int(parts) {
+  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+}
+function int2ip(n) {
+  n = n >>> 0;
+  return [(n >>> 24) & 0xFF, (n >>> 16) & 0xFF, (n >>> 8) & 0xFF, n & 0xFF].join('.');
+}
+
+function cidrToMask(cidr) {
+  if (cidr === 0) return 0;
+  return (~0 << (32 - cidr)) >>> 0;
+}
+
+// Validar IP
+function validateIPv4(str) {
+  const parts = str.trim().split('.');
+  if (parts.length !== 4) return null;
+  const nums = parts.map(Number);
+  if (nums.some(n => isNaN(n) || n < 0 || n > 255 || !Number.isInteger(n))) return null;
+  // Verificar que no haya espacios internos ni ceros iniciales inválidos
+  if (parts.some(p => p !== String(Number(p)))) return null;
+  return nums;
+}
+
+// Máscara: parsear CIDR (/n) o decimal (x.x.x.x)
+let maskMode = 'cidr'; // 'cidr' | 'dec'
+function setMaskMode(mode) {
+  maskMode = mode;
+  document.getElementById('btn-cidr').classList.toggle('active', mode === 'cidr');
+  document.getElementById('btn-dec').classList.toggle('active', mode === 'dec');
+  document.getElementById('ipv4-mask').placeholder = mode === 'cidr' ? '/24' : '255.255.255.0';
+  calcIPv4();
+}
+
+function parseMask(str) {
+  str = str.trim().replace(/^\//, '');
+  if (maskMode === 'cidr') {
+    const n = parseInt(str, 10);
+    if (isNaN(n) || n < 0 || n > 32) return null;
+    return { cidr: n, mask: cidrToMask(n) };
+  } else {
+    const parts = validateIPv4(str);
+    if (!parts) return null;
+    const mask = ip2int(parts);
+    // Validar que es máscara contigua
+    const inv = (~mask) >>> 0;
+    if ((inv & (inv + 1)) !== 0) return null; // no contiguos
+    // Contar bits
+    let cidr = 0;
+    let m = mask;
+    while (m & 0x80000000) { cidr++; m = (m << 1) >>> 0; }
+    return { cidr, mask };
+  }
+}
+
+// ================================================================
+//  CALCULADORA IPv4
+// ================================================================
+function calcIPv4() {
+  const ipRaw  = document.getElementById('ipv4-ip').value;
+  const maskRaw = document.getElementById('ipv4-mask').value;
+  const info  = document.getElementById('ipv4-info');
+
+  // Validar IP
+  const ipParts = validateIPv4(ipRaw);
+  document.getElementById('ipv4-ip').classList.toggle('err', !ipParts && ipRaw.length > 0);
+  document.getElementById('ipv4-ip').classList.toggle('ok', !!ipParts);
+
+  if (!ipParts) {
+    if (ipRaw.length > 0) showInfo(info, 'err', '⚠ Dirección IP inválida. Formato: octetos 0-255 separados por punto.');
+    else hideInfo(info);
+    clearIPv4Results();
+    return;
+  }
+
+  // Validar máscara
+  const maskObj = parseMask(maskRaw);
+  document.getElementById('ipv4-mask').classList.toggle('err', !maskObj && maskRaw.length > 0);
+  document.getElementById('ipv4-mask').classList.toggle('ok', !!maskObj);
+
+  if (!maskObj) {
+    if (maskRaw.length > 0) showInfo(info, 'err', maskMode === 'cidr'
+      ? '⚠ CIDR inválido. Rango: 0 – 32.'
+      : '⚠ Máscara inválida. Debe ser contigua (ej: 255.255.255.0).');
+    else hideInfo(info);
+    clearIPv4Results();
+    return;
+  }
+
+  hideInfo(info);
+  const { cidr, mask } = maskObj;
+  const ipInt   = ip2int(ipParts);
+  const netInt  = (ipInt & mask) >>> 0;
+  const wildcard = (~mask) >>> 0;
+  const bcastInt = (netInt | wildcard) >>> 0;
+  const totalHosts = wildcard - 1; // -1 red, -1 broadcast → wildcard+1-2 = wildcard-1
+  const firstHost  = netInt + 1;
+  const lastHost   = bcastInt - 1;
+
+  // Clase
+  const clase = getClass(ipParts[0]);
+
+  // Máscara info
+  const maskBin = toBin32(mask);
+  const maskHex = '0x' + toHex32(mask);
+  const wildcardBin = toBin32(wildcard);
+
+  // Renderizar bits
+  renderIPv4Bits(ipParts, mask, cidr);
+
+  // Renderizar barra de espacio
+  renderSpaceBar(cidr, { network: int2ip(netInt), broadcast: int2ip(bcastInt), totalHosts: cidr >= 32 ? 1 : cidr === 31 ? 2 : totalHosts });
+
+  // Renderizar resultados
+  renderIPv4Results({
+    ip: ipRaw.trim(),
+    network: int2ip(netInt),
+    broadcast: int2ip(bcastInt),
+    firstHost: cidr >= 31 ? '—' : int2ip(firstHost),
+    lastHost: cidr >= 31 ? '—' : int2ip(lastHost),
+    totalHosts: cidr >= 32 ? 1 : cidr === 31 ? 2 : totalHosts,
+    maskDec: int2ip(mask),
+    maskBin: maskBin,
+    maskHex: maskHex,
+    wildcardDec: int2ip(wildcard),
+    wildcardBin: wildcardBin,
+    cidr: cidr,
+    clase: clase
+  });
+}
+
+function getClass(firstOctet) {
+  if (firstOctet >= 0   && firstOctet <= 127)  return 'A';
+  if (firstOctet >= 128 && firstOctet <= 191)  return 'B';
+  if (firstOctet >= 192 && firstOctet <= 223)  return 'C';
+  if (firstOctet >= 224 && firstOctet <= 239)  return 'D (Multicast)';
+  if (firstOctet >= 240 && firstOctet <= 255)  return 'E (Reservada)';
+  return '—';
+}
+
+function renderIPv4Bits(ipParts, mask, cidr) {
+  const container = document.getElementById('ipv4-bits');
+  const ipBin = toBin32(ip2int(ipParts));
+  let html = '<div class="bits-row">';
+  for (let oct = 0; oct < 4; oct++) {
+    html += '<div class="bit-octet-group">';
+    for (let b = 0; b < 8; b++) {
+      const idx = oct * 8 + b;
+      const bitVal = ipBin[idx];
+      const isNet = idx < cidr;
+      const cls = isNet ? 'net' : 'host';
+      const valCls = bitVal === '1' ? ' one' : '';
+      html += `<div class="bit ${cls}${valCls}">${bitVal}</div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  // Etiquetas octetos
+  html += '<div class="bits-labels">';
+  for (let i = 0; i < 4; i++) html += `<div class="octet-label">${ipParts[i]}</div>`;
+  html += '</div>';
+  // Etiqueta red/host pointer
+  if (cidr > 0 && cidr < 32) {
+    html += `<div style="text-align:center; margin-top:6px; font-size:0.68rem; color:var(--txt-micro); font-family:var(--font-mono);">
+      ├─ ${cidr} bits de red ─┤ ├─ ${32-cidr} bits de host ─┤
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function renderSpaceBar(cidr, data) {
+  const netPct  = cidr;
+  const hostPct = 32 - cidr - (cidr < 32 ? 1 : 0);
+  document.getElementById('seg-net').style.flex  = Math.max(netPct, 1);
+  document.getElementById('seg-host').style.flex = Math.max(hostPct, 0.5);
+  document.getElementById('seg-net').textContent  = cidr >= 4 ? `Red (/${cidr})` : '';
+  document.getElementById('seg-host').textContent = (32 - cidr) >= 4 ? `Hosts (${32-cidr} bits)` : '';
+  // Populate labels
+  document.getElementById('label-first').textContent = data ? data.network : '—';
+  document.getElementById('label-hosts').textContent = data ? `${data.totalHosts.toLocaleString()} hosts` : '—';
+  document.getElementById('label-last').textContent  = data ? data.broadcast : '—';
+}
+
+function renderIPv4Results(data) {
+  const g = document.getElementById('ipv4-results');
+  g.innerHTML = `
+    <div class="result-item highlight"><div class="r-label">Dirección de Red</div><div class="r-val">${data.network}</div></div>
+    <div class="result-item bcast"><div class="r-label">Broadcast</div><div class="r-val">${data.broadcast}</div></div>
+    <div class="result-item hosts"><div class="r-label">Primer Host usable</div><div class="r-val">${data.firstHost}</div></div>
+    <div class="result-item hosts"><div class="r-label">Último Host usable</div><div class="r-val">${data.lastHost}</div></div>
+    <div class="result-item hosts"><div class="r-label">Total de Hosts</div><div class="r-val">${data.totalHosts.toLocaleString()}</div></div>
+    <div class="result-item"><div class="r-label">Máscara (decimal)</div><div class="r-val">${data.maskDec}</div></div>
+    <div class="result-item"><div class="r-label">Máscara (binario)</div><div class="r-val" style="font-size:0.78rem;">${data.maskBin}</div></div>
+    <div class="result-item"><div class="r-label">Máscara (hex)</div><div class="r-val">${data.maskHex}</div></div>
+    <div class="result-item"><div class="r-label">Wildcard (decimal)</div><div class="r-val">${data.wildcardDec}</div></div>
+    <div class="result-item"><div class="r-label">Wildcard (binario)</div><div class="r-val" style="font-size:0.78rem;">${data.wildcardBin}</div></div>
+    <div class="result-item"><div class="r-label">Clase (histórica)</div><div class="r-val" style="color:var(--accent-warn);">${data.clase}</div></div>
+    <div class="result-item"><div class="r-label">Notación CIDR</div><div class="r-val">${data.network}/${data.cidr}</div></div>
+  `;
+}
+
+function clearIPv4Results() {
+  document.getElementById('ipv4-results').innerHTML = '';
+  document.getElementById('ipv4-bits').innerHTML = '';
+  document.getElementById('seg-net').style.flex = 24;
+  document.getElementById('seg-host').style.flex = 8;
+  document.getElementById('seg-net').textContent = 'Red';
+  document.getElementById('seg-host').textContent = 'Hosts';
+  document.getElementById('label-first').textContent = '—';
+  document.getElementById('label-hosts').textContent = '—';
+  document.getElementById('label-last').textContent = '—';
+}
+
+// ================================================================
+//  CALCULADORA IPv6
+// ================================================================
+
+// Expandir dirección IPv6 a 8 bloques completos (sin ::)
+function expandIPv6(str) {
+  str = str.trim().toLowerCase();
+  // Separar por ::
+  const halves = str.split('::');
+  if (halves.length > 2) return null; // más de un ::
+  let left  = halves[0] ? halves[0].split(':') : [];
+  let right = halves.length > 1 ? (halves[1] ? halves[1].split(':') : []) : [];
+  // Validar cada bloque
+  const allBlocks = [...left, ...right];
+  for (const b of allBlocks) {
+    if (!/^[0-9a-f]{1,4}$/.test(b)) return null;
+  }
+  const missing = 8 - left.length - right.length;
+  if (missing < 0) return null;
+  if (halves.length === 1 && left.length !== 8) return null;
+  const zeros = Array(missing).fill('0000');
+  const blocks = [...left, ...zeros, ...right].map(b => b.padStart(4, '0'));
+  if (blocks.length !== 8) return null;
+  return blocks;
+}
+
+function calcIPv6() {
+  const addrRaw = document.getElementById('ipv6-addr').value;
+  const prefixRaw = document.getElementById('ipv6-prefix').value.trim();
+  const info = document.getElementById('ipv6-info');
+
+  const blocks = expandIPv6(addrRaw);
+  document.getElementById('ipv6-addr').classList.toggle('err', !blocks && addrRaw.length > 0);
+  document.getElementById('ipv6-addr').classList.toggle('ok', !!blocks);
+
+  if (!blocks) {
+    if (addrRaw.length > 0) showInfo(info, 'err', '⚠ Dirección IPv6 inválida. Puede usar :: para comprimir ceros.');
+    else hideInfo(info);
+    clearIPv6Results();
+    return;
+  }
+
+  const prefix = parseInt(prefixRaw, 10);
+  document.getElementById('ipv6-prefix').classList.toggle('err', isNaN(prefix) || prefix < 0 || prefix > 128);
+  document.getElementById('ipv6-prefix').classList.toggle('ok', !isNaN(prefix) && prefix >= 0 && prefix <= 128);
+
+  if (isNaN(prefix) || prefix < 0 || prefix > 128) {
+    showInfo(info, 'err', '⚠ Prefijo inválido. Rango: 0 – 128.');
+    clearIPv6Results();
+    return;
+  }
+
+  hideInfo(info);
+
+  // Calcular red (prefijo): zeroar bits después del prefijo
+  const netBlocks = blocks.map((b, i) => {
+    const blockStart = i * 16;
+    const blockEnd   = blockStart + 15;
+    if (blockEnd < prefix) return b; // bloque completo en prefijo
+    if (blockStart >= prefix) return '0000'; // bloque fuera del prefijo
+    // Bloque parcial
+    const bitsInPrefix = prefix - blockStart;
+    const val = parseInt(b, 16);
+    const mask = (0xFFFF << (16 - bitsInPrefix)) & 0xFFFF;
+    return (val & mask).toString(16).padStart(4, '0');
+  });
+
+  // Renderizar bloques
+  renderIPv6Blocks(blocks, netBlocks, prefix);
+
+  // Renderizar bits
+  renderIPv6Bits(blocks, prefix);
+
+  // Total de direcciones en subnet: 2^(128-prefix)
+  const hostBits = 128 - prefix;
+  let totalStr;
+  if (hostBits === 0) totalStr = '1';
+  else if (hostBits <= 53) totalStr = (2 ** hostBits).toLocaleString();
+  else totalStr = '2^' + hostBits + ' (≈ ' + (2 ** hostBits).toExponential(2) + ')';
+
+  // Dirección comprimida
+  const netCompressed = compressIPv6(netBlocks);
+  const addrCompressed = compressIPv6(blocks);
+  const fullExpanded = blocks.join(':');
+  const netFull = netBlocks.join(':');
+
+  renderIPv6Results({
+    addrExpanded: fullExpanded,
+    addrCompressed: addrCompressed,
+    netExpanded: netFull,
+    netCompressed: netCompressed,
+    prefix: prefix,
+    hostBits: hostBits,
+    totalAddresses: totalStr
+  });
+}
+
+function compressIPv6(blocks) {
+  // Encontrar el grupo más largo de bloques consecutivos '0000'
+  let bestStart = -1, bestLen = 0, curStart = -1, curLen = 0;
+  for (let i = 0; i < 8; i++) {
+    if (blocks[i] === '0000') {
+      if (curStart === -1) curStart = i;
+      curLen++;
+      if (curLen > bestLen) { bestStart = curStart; bestLen = curLen; }
+    } else {
+      curStart = -1; curLen = 0;
+    }
+  }
+  if (bestLen < 2) {
+    // No comprimir — solo quitar ceros iniciales
+    return blocks.map(b => parseInt(b, 16).toString(16)).join(':');
+  }
+  const left  = blocks.slice(0, bestStart).map(b => parseInt(b, 16).toString(16));
+  const right = blocks.slice(bestStart + bestLen).map(b => parseInt(b, 16).toString(16));
+  if (left.length === 0 && right.length === 0) return '::';
+  if (left.length === 0)  return '::' + right.join(':');
+  if (right.length === 0) return left.join(':') + '::';
+  return left.join(':') + '::' + right.join(':');
+}
+
+function renderIPv6Blocks(blocks, netBlocks, prefix) {
+  const container = document.getElementById('ipv6-blocks');
+  let html = '';
+  for (let i = 0; i < 8; i++) {
+    const blockStart = i * 16;
+    const blockEnd   = blockStart + 15;
+    // Determinar si es prefijo, host, o mixto
+    let cls = 'prefix';
+    if (blockStart >= prefix) cls = 'host';
+    else if (blockEnd >= prefix) cls = 'prefix'; // mixto → mostrar como prefijo con nota
+    html += `<div class="v6-block ${cls}">
+      <div class="v6-hex">${blocks[i]}</div>
+      <div class="v6-idx">B${i}</div>
+    </div>`;
+    if (i < 7) html += '<div class="v6-separator">:</div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderIPv6Bits(blocks, prefix) {
+  const container = document.getElementById('ipv6-bits');
+  const fullBin = blocks.map(b => parseInt(b, 16).toString(2).padStart(16, '0')).join('');
+  let html = '';
+
+  for (let row = 0; row < 2; row++) {
+    html += '<div class="bits-row v6-row">';
+    for (let grp = 0; grp < 4; grp++) {
+      const globalIdx = row * 64 + grp * 16;
+      const blockIdx = row * 4 + grp //1
+      html += '<div class="bit-octet-group">';
+      
+      html += '</div>';
+      html += '<div class="bits-labels">';
+      html += '<div class="octet-label" style="font-size:0.62rem;">B' + blockIdx + ': ' + blocks[blockIdx] + '</div>';
+      html += '</div>';
+      
+      for (let b = 0; b < 16; b++) {
+        const idx = globalIdx + b;
+        const bitVal = fullBin[idx];
+        const isNet  = idx < prefix;
+        let style = '';
+        if (isNet) {
+          style = bitVal === '1'
+            ? 'background:#38bdf455;color:#fff;border-color:#38bdf466;'
+            : 'background:#38bdf428;color:#38bdf4;border-color:#38bdf444;';
+        }
+        const valCls = bitVal === '1' ? ' one' : '';
+        const netCls = isNet ? 'net' : 'host';
+        html += '<div class="bit ' + netCls + valCls + '" style="' + style + '">' + bitVal + '</div>';
+      }
+    }
+    html += '</div>';
+    // Row labels — each pair of 8-bit groups maps to one IPv6 block
+    // html += '<div class="bits-labels">';
+    // for (let grp = 0; grp < 4; grp++) {
+    //   //const blockIdx = row * 4 + Math.floor(grp / 2);
+    //   const blockIdx = row * 4 + grp
+    //   html += '<div class="octet-label" style="font-size:0.62rem;">B' + blockIdx + ': ' + blocks[blockIdx] + '</div>';
+    // }
+    // html += '</div>';
+  }
+
+  // Prefix / host boundary label
+  html += '<div style="text-align:center; margin-top:8px; font-size:0.68rem; color:var(--txt-micro); font-family:var(--font-mono);">'
+        + '├─ ' + prefix + ' bits de prefijo ─┤ &nbsp; ├─ ' + (128 - prefix) + ' bits de host (interfaz) ─┤'
+        + '</div>';
+  container.innerHTML = html;
+}
+
+function renderIPv6Results(data) {
+  document.getElementById('ipv6-results').innerHTML = `
+    <div class="result-item highlight" style="border-color:var(--accent-ipv6)44;"><div class="r-label">Dirección expandida</div><div class="r-val" style="color:var(--accent-ipv6); font-size:0.78rem;">${data.addrExpanded}</div></div>
+    <div class="result-item"><div class="r-label">Dirección comprimida</div><div class="r-val" style="color:var(--accent-ipv6); font-size:0.82rem;">${data.addrCompressed}</div></div>
+    <div class="result-item highlight" style="border-color:var(--accent-ipv6)44;"><div class="r-label">Red (prefijo) expandida</div><div class="r-val" style="color:var(--accent-ipv6); font-size:0.78rem;">${data.netExpanded}</div></div>
+    <div class="result-item"><div class="r-label">Red (prefijo) comprimida</div><div class="r-val" style="color:var(--accent-ipv6);">${data.netCompressed}/${data.prefix}</div></div>
+    <div class="result-item"><div class="r-label">Longitud del prefijo</div><div class="r-val" style="color:var(--accent-ipv6);">/${data.prefix}</div></div>
+    <div class="result-item hosts"><div class="r-label">Bits de host</div><div class="r-val">${data.hostBits}</div></div>
+    <div class="result-item hosts"><div class="r-label">Total de direcciones</div><div class="r-val" style="font-size:0.82rem;">${data.totalAddresses}</div></div>
+  `;
+}
+
+function clearIPv6Results() {
+  document.getElementById('ipv6-results').innerHTML = '';
+  document.getElementById('ipv6-blocks').innerHTML = '';
+  document.getElementById('ipv6-bits').innerHTML = '';
+}
+
+// ================================================================
+//  SUBNETTING
+// ================================================================
+function calcSubnetting() {
+  const baseRaw  = document.getElementById('sub-base').value;
+  const cidrRaw  = document.getElementById('sub-cidr').value.trim();
+  const countRaw = document.getElementById('sub-count').value.trim();
+  const info     = document.getElementById('sub-info');
+  const results  = document.getElementById('sub-results');
+
+  // Validar
+  const baseParts = validateIPv4(baseRaw);
+  if (!baseParts) { showInfo(info, 'err', '⚠ Red base inválida.'); results.innerHTML = ''; return; }
+  const cidr = parseInt(cidrRaw, 10);
+  if (isNaN(cidr) || cidr < 0 || cidr > 30) { showInfo(info, 'err', '⚠ CIDR original debe estar entre 0 y 30.'); results.innerHTML = ''; return; }
+  const count = parseInt(countRaw, 10);
+  if (isNaN(count) || count < 1 || count > 1024) { showInfo(info, 'err', '⚠ Cantidad de subnets: 1–1024.'); results.innerHTML = ''; return; }
+
+  // Calcular nuevo CIDR necesario
+  const bitsNeeded = Math.ceil(Math.log2(count));
+  const newCidr = cidr + bitsNeeded;
+  if (newCidr > 32) { showInfo(info, 'err', `⚠ No es posible dividir /${cidr} en ${count} subnets (se necesita /${newCidr}).`); results.innerHTML = ''; return; }
+
+  const realSubnets = 2 ** bitsNeeded; // siempre potencia de 2
+  const mask = cidrToMask(newCidr);
+  const wildcard = (~mask) >>> 0;
+  const hostsPerSubnet = newCidr >= 32 ? 1 : newCidr === 31 ? 2 : wildcard - 1;
+  const baseInt = ip2int(baseParts) & (cidrToMask(cidr) >>> 0); // asegurar que es red base
+
+  if (count === 1) {
+    showInfo(info, 'ok', '✓ 1 subnet = la red original sin dividir. No se necesitan bits adicionales.');
+  } else {
+    hideInfo(info);
+  }
+
+  // Generar tabla
+  let tableHtml = `
+    <div style="margin-top:10px; margin-bottom:6px; font-size:0.72rem; color:var(--txt-dim);">
+      Red base: <strong style="color:var(--accent-net);">${int2ip(baseInt)}/${cidr}</strong> →
+      ${realSubnets} subnets de /${newCidr} (${bitsNeeded} bit${bitsNeeded>1?'s':''} usados para subnetting).
+      Hosts por subnet: <strong style="color:var(--accent-host);">${hostsPerSubnet.toLocaleString()}</strong>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="subnet-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Red (CIDR)</th>
+          <th>Primer Host</th>
+          <th>Último Host</th>
+          <th>Broadcast</th>
+          <th>Hosts</th>
+          <th>Máscara</th>
+        </tr>
+      </thead><tbody>
+  `;
+  for (let i = 0; i < realSubnets; i++) {
+    const netInt   = (baseInt + i * (wildcard + 1)) >>> 0;
+    const bcastInt = (netInt | wildcard) >>> 0;
+    const active = i < count; // solo resaltar las solicitadas
+    tableHtml += `<tr style="${!active ? 'opacity:0.4;' : ''}">
+      <td class="idx">${i + 1}</td>
+      <td class="net-col">${int2ip(netInt)}/${newCidr}</td>
+      <td>${newCidr >= 31 ? '—' : int2ip(netInt + 1)}</td>
+      <td>${newCidr >= 31 ? '—' : int2ip(bcastInt - 1)}</td>
+      <td class="bcast-col">${int2ip(bcastInt)}</td>
+      <td class="hosts-col">${hostsPerSubnet.toLocaleString()}</td>
+      <td>${int2ip(mask)}</td>
+    </tr>`;
+  }
+  tableHtml += '</tbody></table></div>';
+  if (realSubnets > count) {
+    tableHtml += `<div class="info-bar warn" style="display:block; margin-top:10px;">
+      ⚠ Se necesitan ${bitsNeeded} bits → ${realSubnets} subnets (potencia de 2). Las últimas ${realSubnets - count} están disponibles pero no solicitadas (mostradas con opacidad reducida).
+    </div>`;
+  }
+  results.innerHTML = tableHtml;
+}
+
+// ================================================================
+//  REFERENCIA: TABLA CIDR
+// ============================================================== */
+function buildCIDRTable() {
+  const table = document.getElementById('cidr-table');
+  let html = '<thead><tr><th>CIDR</th><th>Máscara</th><th>Hosts</th><th>Uso común</th></tr></thead><tbody>';
+  const uses = {
+    0:'Todo el tráfico', 8:'Red Clase A', 16:'Red Clase B / VPN', 24:'LAN típica',
+    28:'Subred pequeña (14h)', 30:'Enlace punto–punto (2h)', 32:'Host único',
+    20:'Subred mediana', 22:'Subred (~1k hosts)', 25:'Dividir /24', 26:'64 hosts', 27:'30 hosts', 29:'6 hosts'
+  };
+  for (let i = 0; i <= 32; i++) {
+    const mask = cidrToMask(i);
+    const wild = (~mask) >>> 0;
+    const hosts = i >= 32 ? 1 : i === 31 ? 2 : wild - 1;
+    const use = uses[i] || '';
+    html += `<tr>
+      <td class="cidr-n">/${i}</td>
+      <td>${int2ip(mask)}</td>
+      <td class="cidr-hosts">${hosts.toLocaleString()}</td>
+      <td style="color:var(--txt-dim); font-size:0.75rem;">${use}</td>
+    </tr>`;
+  }
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function buildClassTable() {
+  const table = document.getElementById('class-table');
+  table.innerHTML = `
+    <thead><tr><th>Clase</th><th>Rango primer octeto</th><th>Máscara por defecto</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td class="cidr-class">A</td><td>1 – 126</td><td>255.0.0.0 (/8)</td><td style="color:var(--txt-dim); font-size:0.75rem;">Redes grandes</td></tr>
+      <tr><td class="cidr-class">B</td><td>128 – 191</td><td>255.255.0.0 (/16)</td><td style="color:var(--txt-dim); font-size:0.75rem;">Redes medias</td></tr>
+      <tr><td class="cidr-class">C</td><td>192 – 223</td><td>255.255.255.0 (/24)</td><td style="color:var(--txt-dim); font-size:0.75rem;">Redes pequeñas</td></tr>
+      <tr><td class="cidr-class">D</td><td>224 – 239</td><td>—</td><td style="color:var(--txt-dim); font-size:0.75rem;">Multicast</td></tr>
+      <tr><td class="cidr-class">E</td><td>240 – 255</td><td>—</td><td style="color:var(--txt-dim); font-size:0.75rem;">Reservada / Experimental</td></tr>
+    </tbody>
+  `;
+}
+
+function buildTips() {
+  const tips = [
+    { icon:'💡', title:'CIDR a Hosts', color:'var(--accent-net)', text:'La fórmula es 2^(32−n) − 2. Ejemplo: /24 → 2^8 − 2 = 254 hosts.' },
+    { icon:'⚡', title:'Potencias de 2', color:'var(--accent-host)', text:'Los tamaños de subnet siempre son potencia de 2: 2, 4, 8, 16, 32, 64, 128, 256…' },
+    { icon:'🔁', title:'Wildcard = ¬Máscara', color:'var(--accent-bcast)', text:'La máscara wildcard es el complemento bit a bit de la máscara de red. Útil en ACLs de Cisco.' },
+    { icon:'🚫', title:'Broadcast & Red', color:'var(--accent-err)', text:'Primera dirección = red (no usable). Última dirección = broadcast (no usable). Excepción: /31 y /32.' },
+    { icon:'📐', title:'IPv6 :: compresión', color:'var(--accent-ipv6)', text:'El :: puede parecer una vez en la dirección y reemplaza el grupo más largo de bloques consecutivos de cero.' },
+    { icon:'📏', title:'Subnetting: bits', color:'var(--accent-warn)', text:'Para N subnets necesitas ⌈log₂(N)⌉ bits adicionales. El nuevo CIDR = CIDR original + bits usados.' },
+  ];
+  const container = document.getElementById('tips-grid');
+  container.innerHTML = tips.map(t => `
+    <div class="tip-card" style="border-color:${t.color}33;">
+      <h4 style="color:${t.color};">${t.icon} ${t.title}</h4>
+      <p>${t.text}</p>
+    </div>
+  `).join('');
+}
+
+// ================================================================
+//  HELPERS
+// ================================================================
+function showInfo(el, type, msg) {
+  el.className = 'info-bar ' + type;
+  el.textContent = msg;
+}
+function hideInfo(el) {
+  el.className = 'info-bar';
+  el.textContent = '';
+}
+
+// ================================================================
+//  INIT & LISTENERS
+// ================================================================
+(function init() {
+  // IPv4 — input en tiempo real
+  document.getElementById('ipv4-ip').addEventListener('input', calcIPv4);
+  document.getElementById('ipv4-mask').addEventListener('input', calcIPv4);
+
+  // IPv6 — input en tiempo real
+  document.getElementById('ipv6-addr').addEventListener('input', calcIPv6);
+  document.getElementById('ipv6-prefix').addEventListener('input', calcIPv6);
+
+  // Referencia
+  buildCIDRTable();
+  buildClassTable();
+  buildTips();
+
+  // Valores iniciales demostrativo
+  document.getElementById('ipv4-ip').value   = '192.168.1.100';
+  document.getElementById('ipv4-mask').value = '24';
+  calcIPv4();
+
+  document.getElementById('ipv6-addr').value   = '2001:0db8:85a3::8a2e:0370:7334';
+  document.getElementById('ipv6-prefix').value = '64';
+  calcIPv6();
+
+  document.getElementById('sub-base').value  = '172.16.0.0';
+  document.getElementById('sub-cidr').value  = '16';
+  document.getElementById('sub-count').value = '8';
+})();
+</script>
+</body>
+</html>
